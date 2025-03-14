@@ -78,9 +78,10 @@ class ChatbotService:
         
         # Add user messages
         for message in messages:
+            # Fix: Access the message object as a Pydantic model using attribute notation
             gemini_messages.append({
-                "role": "user" if message["role"] == "user" else "model",
-                "parts": [message["content"]]
+                "role": "user" if message.role == "user" else "model",
+                "parts": [message.content]
             })
         
         # Get response from Gemini
@@ -93,8 +94,7 @@ class ChatbotService:
         # Parse the extracted JSON
         extracted_data = None
         try:
-            # Clean the response to get only
-             # Clean the response to get only the JSON part
+            # Clean the response to get only the JSON part
             json_text = extraction_response.text
             
             # Handle cases where the JSON might be wrapped in code blocks
