@@ -1,0 +1,76 @@
+version: '3'
+
+services:
+  database-service:
+    build: ./database-service
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./database-service/data:/app/data
+    environment:
+      - DATABASE_URL=sqlite:///./data/lead_automation.db
+    networks:
+      - lead-automation-network
+
+  chatbot-service:
+    build: ./chatbot-service
+    ports:
+      - "8001:8001"
+    depends_on:
+      - database-service
+    environment:
+      - DATABASE_SERVICE_URL=http://database-service:8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PORT=8001
+    networks:
+      - lead-automation-network
+
+  analyzer-service:
+    build: ./analyzer-service
+    ports:
+      - "8002:8002"
+    depends_on:
+      - database-service
+    environment:
+      - DATABASE_SERVICE_URL=http://database-service:8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PORT=8002
+    networks:
+      - lead-automation-network
+
+  team-matcher-service:
+    build: ./team-matcher-service
+    ports:
+      - "8003:8003"
+    depends_on:
+      - database-service
+    environment:
+      - DATABASE_SERVICE_URL=http://database-service:8000
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PORT=8003
+    networks:
+      - lead-automation-network
+
+  email-service:
+    build: ./email-service
+    ports:
+      - "8004:8004"
+    depends_on:
+      - database-service
+      - team-matcher-service
+    environment:
+      - DATABASE_SERVICE_URL=http://database-service:8000
+      - TEAM_MATCHER_URL=http://team-matcher-service:8003
+      - SMTP_SERVER=${SMTP_SERVER}
+      - SMTP_PORT=${SMTP_PORT}
+      - SMTP_USERNAME=${SMTP_USERNAME}
+      - SMTP_PASSWORD=${SMTP_PASSWORD}
+      - EMAIL_FROM=${EMAIL_FROM}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - PORT=8004
+    networks:
+      - lead-automation-network
+
+networks:
+  lead-automation-network:
+    driver: bridge
